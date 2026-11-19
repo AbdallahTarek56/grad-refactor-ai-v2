@@ -347,7 +347,8 @@
         "GET /api/v1/providers reports local_lora available only when the adapter directory has adapter_config.json plus weights and PEFT is installed; REFACTOR_AI_ADAPTER_PATH, REFACTOR_AI_BASE_MODEL and REFACTOR_AI_LOAD_IN_4BIT configure the adapter",
         "LocalModelProvider._generate_hf forwards analysis_plan and review_critique (retry feedback) and passes the Qwen <|im_end|> token as eos_token_id",
         "tests added for canonical Ollama prompt equality, optional plan/critique forwarding, num_ctx payloads, canonical output extraction, registry cache/env keys, adapter readiness, and the tracked fp16 training config",
-        ".gitignore now anchors /models/ and /runs/ to the repository root; the previous unanchored models/ pattern silently ignored src/models/, so the provider package is now explicitly tracked and reviewed"
+        ".gitignore now anchors /models/ and /runs/ to the repository root; the previous unanchored models/ pattern silently ignored src/models/, so the provider package is now explicitly tracked and reviewed",
+        "a fresh shallow clone of fork/feat/v2-accuracy-upgrade at df8efb9 contains all 10 src/models files and passes 125 tests, check_docs, check_contract, validate_dataset and verify_release (113 artifacts, aggregate af2e0ed2...)"
       ]
     }
   ],
@@ -381,7 +382,7 @@
     "4-bit QLoRA remains unproven in the Kaggle image (completed training/evaluation used native fp16 LoRA)",
     "Local environment: .venv has only a lib64 symlink and no Scripts; uv run fails with 'Access is denied' on .venv/lib64. Gates run with system Python 3.11.9.",
     "Blind human review: 4-candidate packet regenerated under experiments/review/, awaiting human ratings in score_sheet.csv",
-    "Second-machine clean-clone verification: run scripts/verify_release.py against the regenerated RELEASE_MANIFEST.json on a second machine",
+    "Second-machine verification: a fresh shallow clone of fork/feat/v2-accuracy-upgrade on this machine passed the test/docs/contract/dataset/release gates; running verify_release.py on a genuinely different machine is still pending",
     "Kaggle API token rotation is an operational follow-up; no token value is stored in this repository"
   ],
   "next_action": "Rotate the exposed Kaggle token in Kaggle Settings, collect human ratings in experiments/review/score_sheet.csv then run aggregate_blind_review.py, and run scripts/verify_release.py on the second machine for thesis delivery."
