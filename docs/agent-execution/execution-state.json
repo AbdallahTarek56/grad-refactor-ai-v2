@@ -1,7 +1,7 @@
 {
   "template": false,
   "note": "Real checkpoint after the heavy architecture upgrade (P5 evaluation, P6 UI), the single-UI rebuild, the delivery-readiness tooling pass, the accuracy upgrade (shared prompt contract, QLoRA path, best-of-N, 416-record dataset with clean controls, honest refactor_success metrics), the measured A-D run, and Sprint 1 (canonical Ollama prompt, local_lora adapter wiring, retry context and EOS forwarding). Update after every step. Resume from state, not memory. Never fill a field without evidence.",
-  "updated_at": "2026-11-12",
+  "updated_at": "2026-11-19",
   "phase": "P5",
   "current_step": 31,
   "code_sha": null,
