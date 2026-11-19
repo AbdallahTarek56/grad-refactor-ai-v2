@@ -93,8 +93,7 @@ def adapter_status(adapter_path: str | Path | None) -> tuple[bool, str]:
             f"Adapter directory '{directory}' lacks adapter_config.json.",
         )
     if not any(
-        (directory / name).is_file()
-        for name in ("adapter_model.safetensors", "adapter_model.bin")
+        (directory / name).is_file() for name in ("adapter_model.safetensors", "adapter_model.bin")
     ):
         return (
             False,

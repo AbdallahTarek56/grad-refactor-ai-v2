@@ -30,9 +30,7 @@ _local_provider_cache_lock = threading.Lock()
 
 def _local_adapter_path() -> str:
     """Return the configured adapter directory (never silently empty)."""
-    return (
-        os.getenv("REFACTOR_AI_ADAPTER_PATH", "").strip() or str(_DEFAULT_ADAPTER_PATH)
-    )
+    return os.getenv("REFACTOR_AI_ADAPTER_PATH", "").strip() or str(_DEFAULT_ADAPTER_PATH)
 
 
 def _env_flag(name: str) -> bool:
