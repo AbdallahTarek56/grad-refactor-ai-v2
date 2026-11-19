@@ -38,7 +38,7 @@ Ctrl+Enter (أو Cmd+Enter على macOS). مرجع API على http://127.0.0.1:8
 - `mock`: حتمي دائمًا — مناسب للعرض دون GPU.
 - `smart_ast`: تحويلات AST آمنة على CPU (الإصلاحات المضمونة البنيوية).
 - `ollama`: خادم محلي عبر HTTP؛ يظهر غير متاح إن لم يكن الخادم يعمل.
-- `local_lora`: يتطلب Adapter مخصصًا فعليًا عند `runs/lora-first/adapter`؛ يظهر غير متاح بدونه.
+- `local_lora`: يتطلب Adapter مخصصًا فعليًا (الافتراضي `runs/lora-fp16/adapter`، ويُضبط عبر `REFACTOR_AI_ADAPTER_PATH`) مع `adapter_config.json` وأوزان؛ يظهر غير متاح بدونه.
 
 لا يُستبدل مزود مخصص غائب بموديل أساسي صامتًا؛ الاختيار غير المتاح يُمنع في الواجهة ويُرفض
 بسبب صريح في الـAPI.

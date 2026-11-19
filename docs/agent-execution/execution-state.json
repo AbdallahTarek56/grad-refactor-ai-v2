@@ -1,9 +1,9 @@
 {
   "template": false,
-  "note": "Real checkpoint after the heavy architecture upgrade (P5 evaluation, P6 UI), the single-UI rebuild, the delivery-readiness tooling pass, and the accuracy upgrade (shared prompt contract, QLoRA path, best-of-N, 416-record dataset with clean controls, honest refactor_success metrics). Update after every step. Resume from state, not memory. Never fill a field without evidence.",
-  "updated_at": "2026-11-11",
+  "note": "Real checkpoint after the heavy architecture upgrade (P5 evaluation, P6 UI), the single-UI rebuild, the delivery-readiness tooling pass, the accuracy upgrade (shared prompt contract, QLoRA path, best-of-N, 416-record dataset with clean controls, honest refactor_success metrics), the measured A-D run, and Sprint 1 (canonical Ollama prompt, local_lora adapter wiring, retry context and EOS forwarding). Update after every step. Resume from state, not memory. Never fill a field without evidence.",
+  "updated_at": "2026-11-12",
   "phase": "P5",
-  "current_step": 30,
+  "current_step": 31,
   "code_sha": null,
   "hardware": {
     "cpu": null,
@@ -76,30 +76,28 @@
     {
       "id": 6,
       "name": "fine-tuning",
-      "status": "partial",
+      "status": "done",
       "evidence": [
         "training/train_lora.py implements the QLoRA 4-bit NF4 path (rank 16/alpha 32/all-linear, max_length=2048, 3 epochs, cosine, gradient checkpointing, best validation checkpoint)",
         "training and inference share src/models/prompting.py (system prompt, findings format, chat template, <|im_end|>) with completion-only loss",
         "exact-tokenizer audit passed on Kaggle for all 416 records: max 1623 tokens, mean 663.5, p95 1591, prompt_max 934, completion_max 700, over_limit empty",
-        "Kaggle private dataset abdallahtarek123/grad-refactor-ai-training and kernel abdallahtarek123/grad-refactor-ai-qlora-training created; the 3B fp16 LoRA run (load_in_4bit=false, optim=adamw_torch) is RUNNING",
-        "live training evidence at 2026-11-10 13:45 local: epoch 1/3 completed, validation 48/48 in 1:48, checkpoint-20 saved; global step 24/60 at 45:11, GPU 10,743 MiB / 100 %, ETA about one hour; no adapter exists yet and this is not QLoRA",
-        "the earlier checkpoint-load stall was a Hub/Xet download stall, not a bitsandbytes hang: snapshot_download with HF_HUB_DISABLE_XET=1 followed by HF_HUB_OFFLINE=1 reduced Loading checkpoint shards to 2/2 in under one second; the 4-bit path remains unproven"
+        "measured run completed: 3B native fp16 LoRA (load_in_4bit=false, optim=adamw_torch), 60/60 steps, final validation 48/48 with eval_loss 0.005797240417450666; see step 29 for the adapter checksum and step 30 for A-D evaluation",
+        "the checkpoint-load stall was a Hub/Xet download stall, not a bitsandbytes hang: snapshot_download with HF_HUB_DISABLE_XET=1 followed by HF_HUB_OFFLINE=1 reduced Loading checkpoint shards to 2/2 in under one second; the 4-bit QLoRA path remains unproven"
       ]
     },
     {
       "id": 7,
       "name": "independent-evaluation",
-      "status": "partial",
+      "status": "done",
       "evidence": [
-        "experiments/evaluation_results.csv + evaluation_summary.json (built-in suite, A/B executed, C/D provider_unavailable)",
-        "experiments/dataset_test_results.csv + dataset_test_summary.json (48-case test split: 32 findings + 16 clean controls; A/B executed)",
-        "summary separates smell_resolution_rate, findings_refactor_success_rate and clean_control_success_rate; test_pass_rate is null when no case is testable",
+        "real A-D evaluation completed on the frozen 48-case test split: 192 rows in experiments/dataset_test_finetuned_results.csv, 0 provider_unavailable",
+        "A=29/48 (0.6042), B=36/48 (0.7500), C=22/48 (0.4583), D=44/48 (0.9167); D vs B is the strongest paired claim (8 discordant cases, exact McNemar p=0.0078)",
+        "D's headline is selected best-of-3, not pass@1; execution_pass_at_1=0.9773 covers 44 testable cases, i.e. 43/48=0.8958 over all 48; four long-parameter-list rows are a signature-guard artifact (see docs/agent-execution/pending-edits.md)",
+        "C is not an adapter-alone arm because the harness passed findings=[]; 26/32 findings cases were no-ops and its 22 successes are 16 clean controls + 6 findings. Correcting C is pending-edits E1 and requires a Kaggle rerun",
         "Group A receives the same AST findings as Group B; --baseline base compares against the real base model, --candidates N uses AST-only selection",
-        "harness now caches one baseline and one adapter provider per run instead of reloading the model per case, and --timeout (default 900s) bounds each local generation call; generation timeouts are executed failures (generation_timeout), not provider_unavailable",
-        "Groups C/D and blind human review remain pending the trained adapter",
-        "harness now runs groups A/B first, releases the cached baseline model via _release_baseline_provider, then runs C/D with the adapter so two 3B fp16 models never share a 15 GB T4",
-        "local_provider places fp16 checkpoints on the GPU with device_map=auto instead of loading on CPU and relying on pipeline(device=...), and the sandbox disables third-party pytest plugin autoload (PYTEST_DISABLE_PLUGIN_AUTOLOAD=1, NFR02)",
-        "tests/test_evaluation.py::test_run_all_releases_baseline_before_loading_adapter covers the sequencing; Kaggle eval notebook regenerated with source gates and kernel_sources -> training output"
+        "harness caches one baseline and one adapter provider per run, releases the baseline before loading the adapter, and --timeout bounds each local generation call",
+        "local_provider places fp16 checkpoints on the GPU with device_map=auto; the sandbox disables third-party pytest plugin autoload (PYTEST_DISABLE_PLUGIN_AUTOLOAD=1, NFR02)",
+        "blind human review is still 0/384; no human-quality claim is made"
       ]
     },
     {
@@ -338,11 +336,24 @@
         "LF line-ending mismatch fixed in scripts/generate_curated_dataset.py and src/evaluation/harness.py; data/curated.jsonl sha256 matches data/manifest.json e5b782bf584b331cfe11daeca2356041fcd79de3db61f5f4205ba50c73805756",
         "blind review packet regenerated for all 4 candidates (A/B/C/D) in experiments/review/; docs/evaluation/protocol.md UTF-8 fixed; all gates and RELEASE_MANIFEST.json regenerated and verified; PDF report exported"
       ]
+    },
+    {
+      "id": 31,
+      "name": "sprint-1-canonical-prompt-and-adapter-wiring",
+      "status": "done",
+      "evidence": [
+        "OllamaModelProvider.build_prompt now renders the canonical training prompt via models.prompting.build_user_prompt; the private legacy system prompt and section format were removed, and num_ctx defaults to 2048 with an options override",
+        "local_lora now resolves through registry._resolve_local_lora() to a cached LocalModelProvider(adapter_path=..., prefer_ollama=False, require_hf=True); local/auto keep the Ollama fallback, and a requested adapter never degrades silently to the base model or SmartAST (NFR06)",
+        "GET /api/v1/providers reports local_lora available only when the adapter directory has adapter_config.json plus weights and PEFT is installed; REFACTOR_AI_ADAPTER_PATH, REFACTOR_AI_BASE_MODEL and REFACTOR_AI_LOAD_IN_4BIT configure the adapter",
+        "LocalModelProvider._generate_hf forwards analysis_plan and review_critique (retry feedback) and passes the Qwen <|im_end|> token as eos_token_id",
+        "tests added for canonical Ollama prompt equality, optional plan/critique forwarding, num_ctx payloads, canonical output extraction, registry cache/env keys, adapter readiness, and the tracked fp16 training config",
+        ".gitignore now anchors /models/ and /runs/ to the repository root; the previous unanchored models/ pattern silently ignored src/models/, so the provider package is now explicitly tracked and reviewed"
+      ]
     }
   ],
   "checks": {
     "doctor": "pass (toolchain, bundle fresh, SQLite integrity ok)",
-    "pytest": "110 passed",
+    "pytest": "125 passed",
     "ruff": "check + format pass",
     "check_docs": "pass",
     "check_contract": "7 models, no drift",

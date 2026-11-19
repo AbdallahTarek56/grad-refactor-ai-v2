@@ -32,7 +32,10 @@
   يستخدمان `src/models/prompting.py` نفسه (system prompt، صياغة findings، chat template،
   `<|im_end|>`) ويُدرَّب completion فقط. `--dry-run` يفحص الأطوال بالـtokenizer الحقيقي قبل حجز
   GPU، و`scripts/audit_tokens.py` يقدم فحصًا سريعًا بلا tokenizer مع تصريح أنه proxy. الأثر: لا
-  فجوة بين توزيع التدريب والاستدلال، ولا يُدَّعى وجود Adapter قبل تشغيل تدريب فعلي.
+  فجوة بين توزيع التدريب والاستدلال، ولا يُدَّعى وجود Adapter قبل تشغيل تدريب فعلي. **التشغيل
+  المقاس** استخدم native fp16 LoRA (`load_in_4bit=false`, `optim=adamw_torch`,
+  `configs/training.3b-fp16.json`) لأن QLoRA 4-bit لم يثبت على صورة الحاوية؛ يبقى QLoRA مسارًا
+  تجريبيًا ولا يُنسب إلى النتائج.
 - **ADR12 (سلم المزودات):** البديل كان الرجوع الصامت إلى موديل أساسي عند غياب Adapter LoRA أو
   خادم Ollama، ورُفض لأنه يضلل المقارنة البحثية (NFR06). القرار: `create_provider` يحل الأسماء
   صراحة، و`LocalModelProvider` يقرأ الموديل الأساس من `adapter_config.json` عند وجود Adapter،

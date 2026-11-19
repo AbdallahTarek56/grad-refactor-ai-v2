@@ -1,5 +1,7 @@
 """Unit tests for model providers (Mock and Local)."""
 
+import json
+
 import pytest
 
 from core.ast_analyzer import analyze
@@ -7,6 +9,7 @@ from core.exceptions import ExecutionTimeoutError
 from core.schemas import ASTFinding
 from models.local_provider import LocalModelProvider
 from models.mock_provider import MockModelProvider
+from models.ollama_provider import OllamaModelProvider
 
 
 @pytest.mark.anyio
@@ -88,3 +91,53 @@ async def test_local_provider_cpu_fallback():
     refactored, meta = await provider.generate_refactoring(code, [])
     assert meta["provider"] in ("local-cpu-fallback", "local-hf")
     assert analyze(refactored).syntax_valid is True
+
+
+def test_ollama_payload_sets_num_ctx_and_allows_override(monkeypatch):
+    captured: list[dict[str, object]] = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return b'{"response": "```python\\ndef f():\\n    return 1\\n```"}'
+
+    def fake_urlopen(request, timeout=None):
+        captured.append(json.loads(request.data.decode("utf-8")))
+        return Response()
+
+    monkeypatch.setattr("models.ollama_provider.urllib.request.urlopen", fake_urlopen)
+    provider = OllamaModelProvider(num_ctx=4096)
+
+    provider._post_generate("prompt", {})
+    provider._post_generate("prompt", {"num_ctx": 512})
+
+    assert captured[0]["options"]["num_ctx"] == 4096
+    assert captured[1]["options"]["num_ctx"] == 512
+
+
+@pytest.mark.anyio
+async def test_ollama_generate_uses_the_canonical_extractor(monkeypatch):
+    provider = OllamaModelProvider()
+
+    def fake_post(prompt, options):
+        return {
+            "response": (
+                "Here is the refactored code:\n```python\ndef f(x):\n    return x\n```\n<|im_end|>"
+            ),
+            "prompt_eval_count": 11,
+            "eval_count": 5,
+            "model": "qwen-test",
+        }
+
+    monkeypatch.setattr(provider, "_post_generate", fake_post)
+    refactored, meta = await provider.generate_refactoring("def f(x):\n    return x - 1\n", [])
+
+    assert refactored == "def f(x):\n    return x\n"
+    assert meta["provider"] == "ollama"
+    assert meta["model"] == "qwen-test"
+    assert meta["total_tokens"] == 16

@@ -15,8 +15,9 @@ runs.sqlite3*
 data/*
 !data/curated.jsonl
 !data/manifest.json
-models/
-runs/
+# Root-only runtime directories: src/models is source code and must be tracked.
+/models/
+/runs/
 *.log
 *.safetensors
 *.pt

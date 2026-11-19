@@ -32,6 +32,15 @@ def test_config_requires_a_real_model_id(tmp_path):
         train_lora._load_config(config)
 
 
+def test_measured_fp16_config_is_loadable_and_not_qlora():
+    loaded = train_lora._load_config(ROOT / "configs" / "training.3b-fp16.json")
+    assert loaded["model_id"] == "Qwen/Qwen2.5-Coder-3B-Instruct"
+    assert loaded["model_revision"] == "488639f1ff808d1d3d0ba301aef8c11461451ec5"
+    assert loaded["load_in_4bit"] is False
+    assert loaded["optim"] == "adamw_torch"
+    assert loaded["output_dir"] == "runs/lora-fp16"
+
+
 def test_config_defaults_match_the_accuracy_plan(tmp_path):
     config = tmp_path / "config.json"
     config.write_text(

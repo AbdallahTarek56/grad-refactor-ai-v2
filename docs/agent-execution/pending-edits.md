@@ -3,6 +3,9 @@
 **Status: saved, not applied.** The user will send a plan; these edits are recorded so they can be
 applied in one batch. No code, dataset, manifest or Kaggle run has been changed for this file.
 
+Sprint 1 (canonical Ollama prompt, `local_lora` adapter wiring, retry context/EOS forwarding) is a
+separate, applied change recorded as step 31 in `execution-state.json`; it does not resolve E1–E5.
+
 Source: review of the 91.67% A–D report and the separate unrun 3B notebooks. The two validity gaps
 are (1) Group C is not an adapter-alone arm, and (2) Group D's four `long-parameter-list` rows are a
 guard/selection artifact, not model failures.

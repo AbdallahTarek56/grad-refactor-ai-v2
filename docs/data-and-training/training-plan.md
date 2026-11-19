@@ -1,6 +1,6 @@
 # خطة تخصيص الموديل
 
-الحالة: مسار QLoRA منفذ في `training/train_lora.py`، لكن **لم يبدأ تدريب ولم يُعتمد Adapter**. الهدف الأول تخصيص دور التعديل على أنواع Refactoring ضيقة، مع الحفاظ على baseline مستقل.
+الحالة: مسار التدريب منفذ في `training/train_lora.py`، وتم **تشغيل تدريب فعلي واعتماد Adapter** على Kaggle Tesla T4 بإعداد **native fp16 LoRA** (`load_in_4bit=false`, `optim=adamw_torch`). مسار QLoRA 4-bit ما زال غير مثبت على صورة الحاوية، والمانيفست المقاس في `experiments/training/lora-fp16/run-manifest.json`. الهدف الأول تخصيص دور التعديل على أنواع Refactoring ضيقة، مع الحفاظ على baseline مستقل.
 
 ## تجربة الجدوى في الأسبوع الأول
 
@@ -8,7 +8,7 @@
 
 ## المسار
 
-PyTorch وTransformers وDatasets وPEFT وbitsandbytes هي حزمة التدريب. المسار الافتراضي هو QLoRA 4-bit NF4 مع `bfloat16`/`float16` compute، rank 16، alpha 32، `target_modules="all-linear"`، `max_length=2048`، ثلاث epochs، cosine schedule، gradient checkpointing، وeffective batch 16 (batch 1 × gradient accumulation 16). يُختار أفضل checkpoint حسب validation loss. التدريب يتطلب CUDA؛ لا نستخدم CPU لتدريب طويل ولا نفترض توافر GPU مجاني دائمًا. `--dry-run` يعمل على CPU ويستخدم tokenizer الحقيقي لفحص الأطوال قبل حجز GPU.
+PyTorch وTransformers وDatasets وPEFT وbitsandbytes هي حزمة التدريب. الإعداد الافتراضي في السكريبت هو QLoRA 4-bit NF4 مع `bfloat16`/`float16` compute، rank 16، alpha 32، `target_modules="all-linear"`، `max_length=2048`، ثلاث epochs، cosine schedule، gradient checkpointing، وeffective batch 16 (batch 1 × gradient accumulation 16). التشغيل المقاس استخدم `configs/training.3b-fp16.json` مع `load_in_4bit=false` و`optim=adamw_torch` لأن QLoRA لم يثبت على صورة Kaggle. يُختار أفضل checkpoint حسب validation loss. التدريب يتطلب CUDA؛ لا نستخدم CPU لتدريب طويل ولا نفترض توافر GPU مجاني دائمًا. `--dry-run` يعمل على CPU ويستخدم tokenizer الحقيقي لفحص الأطوال قبل حجز GPU.
 
 ## عقد الـprompt والـEOS
 
@@ -23,13 +23,13 @@ uv run python scripts/validate_dataset.py data/curated.jsonl
 uv run python scripts/audit_tokens.py data/curated.jsonl --max-length 2048
 ```
 
-في بيئة التدريب المنفصلة، بعد تثبيت تبعيات متوافقة وتثبيت نسخها، املأ `configs/training.local.json` بمعرف وrevision معتمدين ومسارات البيانات ثم شغّل:
+في بيئة التدريب المنفصلة، بعد تثبيت تبعيات متوافقة وتثبيت نسخها، استخدم `configs/training.3b-fp16.json` لإعادة التشغيل المقاس (أو انسخه إلى `configs/training.local.json` وعدّل المسارات) ثم شغّل:
 
 ```bash
-python training/train_lora.py --config configs/training.example.json --dry-run
-python training/train_lora.py --config configs/training.local.json
-python training/train_lora.py --config configs/training.local.json \
-  --resume-from-checkpoint runs/lora-first/checkpoint-42
+python training/train_lora.py --config configs/training.3b-fp16.json --dry-run
+python training/train_lora.py --config configs/training.3b-fp16.json
+python training/train_lora.py --config configs/training.3b-fp16.json \
+  --resume-from-checkpoint runs/lora-fp16/checkpoint-42
 ```
 
 يرفض السكريبت الإعدادات غير المحسومة، والبيانات غير الصالحة، والسجلات الأطول من `max_length`، وبيئة بلا CUDA عند التدريب الفعلي. يستبعد test من Trainer ويستخدم validation للاختيار. يكتب `run-manifest.json` مع dataset sha256، resolved model commit، نسخ الحزمة، العتاد، seed، عدد المعاملات القابلة للتدريب، ذروة ذاكرة GPU، مدة التدريب، checksum للـAdapter، ونتيجة smoke generation تفحص syntax فقط عبر AST ولا تنفذ الكود المولّد (NFR01). لا يكفي loss وحده للحكم؛ يبقى تقييم `refactor_success` على test المجمد هو المرجع.
