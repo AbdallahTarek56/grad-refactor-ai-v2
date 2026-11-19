@@ -1,7 +1,8 @@
 # Pending edits — accuracy-review follow-up (2026-11-12)
 
-**Status: saved, not applied.** The user will send a plan; these edits are recorded so they can be
-applied in one batch. No code, dataset, manifest or Kaggle run has been changed for this file.
+**Status: partially applied.** E1 code and its regression test are on
+`feat/v2-accuracy-upgrade` (step 32 in `execution-state.json`); E2–E5 are still saved, not applied.
+No dataset, manifest or Kaggle run has been changed for this file.
 
 Sprint 1 (canonical Ollama prompt, `local_lora` adapter wiring, retry context/EOS forwarding) is a
 separate, applied change recorded as step 31 in `execution-state.json`; it does not resolve E1–E5.
@@ -20,6 +21,11 @@ guard/selection artifact, not model failures.
 - **Acceptance:** unit test that C forwards the analysis findings; rerun C on the 48 test cases;
   compare C vs A with exact McNemar; update the 2×2 table only after the rerun.
 - **Do not predict the new C number.** Record it only after the run.
+
+**Applied (code + test):** `run_group_c_finetuned_single` now analyzes the case and forwards
+`analysis.findings`; `tests/test_evaluation.py::test_group_c_receives_the_same_findings_as_group_a`
+fails on the pre-E1 harness (36 findings missing from C) and passes on the fix. The 48-case rerun
+and the McNemar update remain open.
 
 ## E2 — Accept the long-parameter-list parameter-object refactor
 

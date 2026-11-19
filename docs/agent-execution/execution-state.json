@@ -350,11 +350,21 @@
         ".gitignore now anchors /models/ and /runs/ to the repository root; the previous unanchored models/ pattern silently ignored src/models/, so the provider package is now explicitly tracked and reviewed",
         "a fresh shallow clone of fork/feat/v2-accuracy-upgrade at df8efb9 contains all 10 src/models files and passes 125 tests, check_docs, check_contract, validate_dataset and verify_release (113 artifacts, aggregate af2e0ed2...)"
       ]
+    },
+    {
+      "id": 32,
+      "name": "e1-group-c-forwards-analysis-findings",
+      "status": "code-done-run-pending",
+      "evidence": [
+        "src/evaluation/harness.py run_group_c_finetuned_single now runs AnalysisAgent().analyze(case.original_code) and forwards analysis.findings instead of [], matching run_group_a_baseline (NFR06)",
+        "tests/test_evaluation.py::test_group_c_receives_the_same_findings_as_group_a records the findings handed to A and C and asserts both lists are equal and non-empty; the test fails against the pre-E1 harness with 36 missing findings and passes after the change",
+        "the 48-case Group C rerun has NOT been executed, so no new C score is recorded; the existing 0.4583 stays labelled as measured under the old no-op arm"
+      ]
     }
   ],
   "checks": {
     "doctor": "pass (toolchain, bundle fresh, SQLite integrity ok)",
-    "pytest": "125 passed",
+    "pytest": "126 passed",
     "ruff": "check + format pass",
     "check_docs": "pass",
     "check_contract": "7 models, no drift",

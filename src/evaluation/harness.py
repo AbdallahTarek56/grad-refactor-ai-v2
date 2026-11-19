@@ -366,7 +366,14 @@ class EvaluationHarness:
         try:
             provider = self._adapter_provider()
             t0 = time.perf_counter()
-            refactored, meta = await provider.generate_refactoring(case.original_code, [])
+
+            # Group C must receive the same AST findings as Group A and Group B.
+            # Passing [] made C a no-op on findings cases and invalidated the
+            # "adapter alone" comparison (NFR06).
+            analysis = await AnalysisAgent().analyze(case.original_code)
+            refactored, meta = await provider.generate_refactoring(
+                case.original_code, analysis.findings
+            )
             duration_ms = (time.perf_counter() - t0) * 1000
 
             review_agent = ReviewAgent(self.runner)

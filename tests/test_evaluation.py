@@ -47,6 +47,36 @@ def test_harness_caches_baseline_provider():
 
 
 @pytest.mark.anyio
+async def test_group_c_receives_the_same_findings_as_group_a(monkeypatch):
+    """Group C must not run as a no-op arm (E1, NFR06).
+
+    Passing ``findings=[]`` made the adapter-alone arm blind to the very
+    smells the benchmark targets. Groups A and C must be handed the identical
+    AST analysis for the comparison to mean anything.
+    """
+    case = DEFAULT_BENCHMARK_CASES[0]
+    seen: dict[str, list] = {}
+
+    class RecordingProvider:
+        def __init__(self, group: str) -> None:
+            self._group = group
+
+        async def generate_refactoring(self, code, findings, options=None):
+            seen[self._group] = list(findings)
+            return code, {"provider": f"recording-{self._group}"}
+
+    harness = EvaluationHarness(cases=[case])
+    monkeypatch.setattr(harness, "_baseline_provider", lambda: RecordingProvider("A"))
+    monkeypatch.setattr(harness, "_adapter_provider", lambda: RecordingProvider("C"))
+
+    await harness.run_group_a_baseline(case)
+    await harness.run_group_c_finetuned_single(case)
+
+    assert seen["A"], "the benchmark case must trigger at least one finding"
+    assert seen["C"] == seen["A"]
+
+
+@pytest.mark.anyio
 async def test_run_all_releases_baseline_before_loading_adapter(monkeypatch):
     harness = EvaluationHarness(cases=DEFAULT_BENCHMARK_CASES[:1])
     events: list[str] = []
